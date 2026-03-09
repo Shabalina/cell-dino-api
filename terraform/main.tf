@@ -17,7 +17,7 @@ resource "aws_sagemaker_endpoint_configuration" "cell_dino_config" {
     model_name            = aws_sagemaker_model.cell_dino_model.name
     
     serverless_config {
-      max_concurrency   = 10
+      max_concurrency   = 5
       memory_size_in_mb = 3072
     }
   }
