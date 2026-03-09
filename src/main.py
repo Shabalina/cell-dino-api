@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, Response, status
+from fastapi import FastAPI, Request, Response, status
 import torch
 import cv2
 import numpy as np
@@ -27,18 +27,6 @@ def load_model():
     model.eval()
     print("Model loaded and ready for SageMaker")
 
-def preprocess(image_bytes):
-    # Convert bytes to numpy array
-    nparr = np.frombuffer(image_bytes, np.uint8)
-    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-    
-    # Image preprocessing
-    img = cv2.resize(img, (224, 224))
-    img = img.astype(np.float32) / 255.0
-    img = np.transpose(img, (2, 0, 1))
-    img_tensor = torch.from_numpy(img).unsqueeze(0)
-    return img_tensor
-
 # 1. THE HEALTH CHECK (Required by SageMaker)
 @app.get("/ping")
 async def ping():
@@ -49,12 +37,29 @@ async def ping():
 
 # 2. THE INFERENCE POINT (Required by SageMaker)
 @app.post("/invocations")
-async def invocations(file: UploadFile = File(...)):
-    # 1. Read uploaded image
-    contents = await file.read()
+async def invocations(request: Request):
+    # 1. Read the raw bytes directly from the request body
+    contents = await request.body()
+
+    if not contents:
+        return Response(content="No data received", status_code=status.HTTP_400_BAD_REQUEST)
     
-    # 2. Preprocess
-    input_tensor = preprocess(contents).to(device)
+    # 2. Preprocess (Use the bytes directly)
+    try:
+        nparr = np.frombuffer(contents, np.uint8)
+        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        
+        if img is None:
+            raise ValueError("Could not decode image")
+    
+        # Image preprocessing
+        img = cv2.resize(img, (224, 224))
+        img = img.astype(np.float32) / 255.0
+        img = np.transpose(img, (2, 0, 1))
+        input_tensor = torch.from_numpy(img).unsqueeze(0).to(device)
+
+    except Exception as e:
+        return Response(content=f"Preprocessing error: {str(e)}", status_code=status.HTTP_400_BAD_REQUEST)
     
     # 3. Inference
     with torch.no_grad():
