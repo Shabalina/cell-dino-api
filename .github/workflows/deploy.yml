@@ -45,3 +45,22 @@ jobs:
         
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+
+    - name: Terraform Plan
+      id: plan
+      working-directory: ./terraform
+      run: terraform plan -no-color -input=false
+      continue-on-error: true
+
+    - name: Terraform Apply
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      working-directory: ./terraform
+      run: |
+        terraform init
+        terraform apply -auto-approve \
+          -var="image_tag=${{ github.sha }}" \
+          -var="ecr_url=${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}" \
+          -var="sagemaker_role_arn=${{ secrets.SAGEMAKER_ROLE_ARN }}"
