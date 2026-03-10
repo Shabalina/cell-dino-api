@@ -52,8 +52,14 @@ jobs:
     - name: Terraform Plan
       id: plan
       working-directory: ./terraform
-      run: terraform plan -no-color -input=false
-      continue-on-error: true
+      run: |
+        terraform init
+        terraform plan \
+          -var="region=${{ secrets.AWS_REGION }}" \
+          -var="image_tag=${{ github.sha }}" \
+          -var="ecr_url=${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}" \
+          -var="sagemaker_role_arn=${{ secrets.SAGEMAKER_ROLE_ARN }}"
+      continue-on-error: false
 
     - name: Terraform Apply
       if: github.ref == 'refs/heads/main' && github.event_name == 'push'
@@ -61,6 +67,7 @@ jobs:
       run: |
         terraform init
         terraform apply -auto-approve \
+          -var="region=${{ secrets.AWS_REGION }}" \
           -var="image_tag=${{ github.sha }}" \
           -var="ecr_url=${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}" \
           -var="sagemaker_role_arn=${{ secrets.SAGEMAKER_ROLE_ARN }}"
