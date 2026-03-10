@@ -1,0 +1,63 @@
+# 1. The REST API
+resource "aws_api_gateway_rest_api" "cell_dino_api" {
+  name        = "cell-dino-public-api"
+  binary_media_types = ["*/*"] 
+}
+
+# 2. The Resource (the path /predict)
+resource "aws_api_gateway_resource" "predict" {
+  rest_api_id = aws_api_gateway_rest_api.cell_dino_api.id
+  parent_id   = aws_api_gateway_rest_api.cell_dino_api.root_resource_id
+  path_part   = "predict"
+}
+
+# 3. The Method (POST)
+resource "aws_api_gateway_method" "predict_post" {
+  rest_api_id   = aws_api_gateway_rest_api.cell_dino_api.id
+  resource_id   = aws_api_gateway_resource.predict.id
+  http_method   = "POST"
+  authorization = "NONE" # Public
+}
+
+# 4. The Integration with SageMaker
+resource "aws_api_gateway_integration" "sagemaker_link" {
+  rest_api_id             = aws_api_gateway_rest_api.cell_dino_api.id
+  resource_id             = aws_api_gateway_resource.predict.id
+  http_method             = aws_api_gateway_method.predict_post.http_method
+  integration_http_method = "POST"
+  type                    = "AWS"
+  
+  # The URI format is specific for SageMaker:
+  uri = "arn:aws:apigateway:${var.region}:sagemaker:path/endpoints/${aws_sagemaker_endpoint.cell_dino_endpoint.name}/invocations"
+  
+  credentials = aws_iam_role.apigw_sagemaker_role.arn
+}
+
+# 5. Deployment & Stage
+resource "aws_api_gateway_deployment" "prod" {
+  rest_api_id = aws_api_gateway_rest_api.cell_dino_api.id
+
+  depends_on = [
+    aws_api_gateway_integration.sagemaker_link,
+    aws_api_gateway_method.predict_post
+  ]
+
+  # Forces a redeployment whenever the settings change
+  triggers = {
+    redeployment = sha256(jsonencode([
+      aws_api_gateway_resource.predict.id,
+      aws_api_gateway_method.predict_post.id,
+      aws_api_gateway_integration.sagemaker_link.id,
+    ]))
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "aws_api_gateway_stage" "prod" {
+  deployment_id = aws_api_gateway_deployment.prod.id
+  rest_api_id   = aws_api_gateway_rest_api.cell_dino_api.id
+  stage_name    = "prod"
+}

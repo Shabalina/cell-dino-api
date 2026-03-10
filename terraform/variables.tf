@@ -1,3 +1,8 @@
+variable "region" {
+  type        = string
+  description = "AWS region"
+}
+
 variable "image_tag" {
   type        = string
   description = "The unique Docker image tag (for this project the git commit SHA)"
