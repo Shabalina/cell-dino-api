@@ -1,3 +1,11 @@
+terraform {
+  backend "s3" {
+    bucket = "terraform-state-bucket-sha" 
+    key    = "sagemaker/terraform.tfstate"
+    region = "us-east-1"
+  }
+}
+
 # 1. Model
 resource "aws_sagemaker_model" "cell_dino_model" {
   name               = "cell-dino-model-${var.image_tag}"
