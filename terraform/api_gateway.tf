@@ -50,13 +50,15 @@ resource "aws_api_gateway_integration" "sagemaker_link" {
   integration_http_method = "POST"
   type                    = "AWS"
   
+  uri = "arn:aws:apigateway:${var.region}:sagemaker:action/InvokeEndpoint"
   # The URI format is specific for SageMaker:
-  uri = "arn:aws:apigateway:${var.region}:sagemaker:path/endpoints/${aws_sagemaker_endpoint.cell_dino_endpoint.name}/invocations"
+  # uri = "arn:aws:apigateway:${var.region}:sagemaker:path/endpoints/${aws_sagemaker_endpoint.cell_dino_endpoint.name}/invocations"
   
   credentials = aws_iam_role.apigw_sagemaker_role.arn
 
   request_parameters = {
     "integration.request.header.Content-Type" = "method.request.header.Content-Type"
+    "integration.request.querystring.EndpointName" = "'${aws_sagemaker_endpoint.cell_dino_endpoint.name}'"
   }
 }
 
