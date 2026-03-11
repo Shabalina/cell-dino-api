@@ -17,6 +17,10 @@ resource "aws_api_gateway_method" "predict_post" {
   resource_id   = aws_api_gateway_resource.predict.id
   http_method   = "POST"
   authorization = "NONE" # Public
+
+  request_parameters = {
+    "method.request.header.Content-Type" = true
+  }
 }
 
 resource "aws_api_gateway_method_response" "sagemaker_200" {
