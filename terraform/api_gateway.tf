@@ -19,6 +19,22 @@ resource "aws_api_gateway_method" "predict_post" {
   authorization = "NONE" # Public
 }
 
+resource "aws_api_gateway_method_response" "200" {
+  rest_api_id = aws_api_gateway_rest_api.cell_dino_api.id
+  resource_id = aws_api_gateway_resource.predict.id
+  http_method = aws_api_gateway_method.predict_post.http_method
+  status_code = "200"
+}
+
+resource "aws_api_gateway_integration_response" "sagemaker_200" {
+  rest_api_id = aws_api_gateway_rest_api.cell_dino_api.id
+  resource_id = aws_api_gateway_resource.predict.id
+  http_method = aws_api_gateway_method.predict_post.http_method
+  status_code = aws_api_gateway_method_response.200.status_code
+  
+  depends_on = [aws_api_gateway_integration.sagemaker_link]
+}
+
 # 4. The Integration with SageMaker
 resource "aws_api_gateway_integration" "sagemaker_link" {
   rest_api_id             = aws_api_gateway_rest_api.cell_dino_api.id
@@ -31,6 +47,10 @@ resource "aws_api_gateway_integration" "sagemaker_link" {
   uri = "arn:aws:apigateway:${var.region}:sagemaker:path/endpoints/${aws_sagemaker_endpoint.cell_dino_endpoint.name}/invocations"
   
   credentials = aws_iam_role.apigw_sagemaker_role.arn
+
+  request_parameters = {
+    "integration.request.header.Content-Type" = "method.request.header.Content-Type"
+  }
 }
 
 # 5. Deployment & Stage
