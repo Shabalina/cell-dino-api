@@ -19,7 +19,7 @@ resource "aws_api_gateway_method" "predict_post" {
   authorization = "NONE" # Public
 }
 
-resource "aws_api_gateway_method_response" "200" {
+resource "aws_api_gateway_method_response" "sagemaker_200" {
   rest_api_id = aws_api_gateway_rest_api.cell_dino_api.id
   resource_id = aws_api_gateway_resource.predict.id
   http_method = aws_api_gateway_method.predict_post.http_method
@@ -30,7 +30,7 @@ resource "aws_api_gateway_integration_response" "sagemaker_200" {
   rest_api_id = aws_api_gateway_rest_api.cell_dino_api.id
   resource_id = aws_api_gateway_resource.predict.id
   http_method = aws_api_gateway_method.predict_post.http_method
-  status_code = aws_api_gateway_method_response.200.status_code
+  status_code = aws_api_gateway_method_response.sagemaker_200.status_code
   
   depends_on = [aws_api_gateway_integration.sagemaker_link]
 }
