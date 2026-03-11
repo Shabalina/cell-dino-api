@@ -35,6 +35,9 @@ resource "aws_api_gateway_integration_response" "sagemaker_200" {
   resource_id = aws_api_gateway_resource.predict.id
   http_method = aws_api_gateway_method.predict_post.http_method
   status_code = aws_api_gateway_method_response.sagemaker_200.status_code
+
+  # Tells API Gateway to treat SageMaker's 200 as an API 200
+  selection_pattern = "^2[0-9][0-9]$"
   
   depends_on = [aws_api_gateway_integration.sagemaker_link]
 }
