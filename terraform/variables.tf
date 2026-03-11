@@ -3,9 +3,13 @@ variable "region" {
   description = "AWS region"
 }
 
+variable "commit_sha" {
+  type = string
+}
+
 variable "image_tag" {
   type        = string
-  description = "The unique Docker image tag (for this project the git commit SHA)"
+  description = "latest"
 }
 
 variable "ecr_url" {

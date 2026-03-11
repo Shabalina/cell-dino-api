@@ -1,7 +1,7 @@
 # 1. The REST API
 resource "aws_api_gateway_rest_api" "cell_dino_api" {
-  name        = "cell-dino-public-api"
-  binary_media_types = ["*/*"] 
+  name               = "cell-dino-public-api"
+  binary_media_types = ["*/*"]
 }
 
 # 2. The Resource (the path /predict)
@@ -28,6 +28,10 @@ resource "aws_api_gateway_method_response" "sagemaker_200" {
   resource_id = aws_api_gateway_resource.predict.id
   http_method = aws_api_gateway_method.predict_post.http_method
   status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Content-Type" = true
+  }
 }
 
 resource "aws_api_gateway_integration_response" "sagemaker_200" {
@@ -38,7 +42,15 @@ resource "aws_api_gateway_integration_response" "sagemaker_200" {
 
   # Tells API Gateway to treat SageMaker's 200 as an API 200
   selection_pattern = "^2[0-9][0-9]$"
-  
+
+  response_templates = {
+    "application/json" = ""
+  }
+
+  response_parameters = {
+    "method.response.header.Content-Type" = "'application/json'"
+  }
+
   depends_on = [aws_api_gateway_integration.sagemaker_link]
 }
 
@@ -49,15 +61,15 @@ resource "aws_api_gateway_integration" "sagemaker_link" {
   http_method             = aws_api_gateway_method.predict_post.http_method
   integration_http_method = "POST"
   type                    = "AWS"
-  
+
   uri = "arn:aws:apigateway:${var.region}:runtime.sagemaker:action/InvokeEndpoint"
   # The URI format is specific for SageMaker:
   # uri = "arn:aws:apigateway:${var.region}:sagemaker:path/endpoints/${aws_sagemaker_endpoint.cell_dino_endpoint.name}/invocations"
-  
+
   credentials = aws_iam_role.apigw_sagemaker_role.arn
 
   request_parameters = {
-    "integration.request.header.Content-Type" = "method.request.header.Content-Type"
+    "integration.request.header.Content-Type"      = "method.request.header.Content-Type"
     "integration.request.querystring.EndpointName" = "'${aws_sagemaker_endpoint.cell_dino_endpoint.name}'"
   }
 }
