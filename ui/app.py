@@ -4,6 +4,7 @@ from PIL import Image
 import io
 import os
 
+
 # --- PAGE CONFIG ---
 st.set_page_config(page_title="Cell DINOv2 Classifier", page_icon="🔬", layout="centered")
 
@@ -23,15 +24,21 @@ DINOv2-based inference engine.
 results_container = st.container()
 
 # --- 2 GALLERY LOGIC ---
-DEMO_FOLDER = "demo_images"
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+DEMO_FOLDER = os.path.join(SCRIPT_DIR, "demo_images")
+
+
 selected_image_bytes = None
 
 if os.path.exists(DEMO_FOLDER):
-    st.subheader("Select a Demo Image")
-    
-    # Get list of images
     files = [f for f in os.listdir(DEMO_FOLDER) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
     
+    if not files:
+        st.warning(f"No images found in: {DEMO_FOLDER}")
+    else:
+        st.subheader("Select a Demo Image")
+
+
     # Create a grid of columns
     cols = st.columns(6)
 
@@ -47,6 +54,9 @@ if os.path.exists(DEMO_FOLDER):
                     selected_image_bytes = f.read()
                 # Store original image for display later
                 st.session_state['preview_img'] = img
+
+else:
+    st.error(f"Folder not found: {DEMO_FOLDER}")
 
 
 st.divider()
