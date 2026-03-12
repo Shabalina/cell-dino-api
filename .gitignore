@@ -32,3 +32,6 @@ ipython_config.py
 
 # Crash logs
 crash.log
+
+# Streamlit secrets
+*/.streamlit/*

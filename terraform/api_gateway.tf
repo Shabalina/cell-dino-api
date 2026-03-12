@@ -87,6 +87,8 @@ resource "aws_api_gateway_deployment" "prod" {
       aws_api_gateway_resource.predict.id,
       aws_api_gateway_method.predict_post.id,
       aws_api_gateway_integration.sagemaker_link.id,
+      aws_api_gateway_integration.sagemaker_link.uri, # Track the URI specifically
+      aws_api_gateway_integration.sagemaker_link.integration_http_method,
     ]))
   }
 

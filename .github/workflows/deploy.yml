@@ -19,6 +19,11 @@ jobs:
     - name: Pull LFS files
       run: git lfs pull
 
+    # - name: Set up Streamlit Secrets
+    #   run: |
+    #     mkdir -p mkdir -p ui/.streamlit
+    #     echo 'API_URL = "${{ secrets.API_URL }}"' > ui/.streamlit/secrets.toml
+
     # Check if model-related files changed
     - name: Check for Model Changes
       id: model-changes
