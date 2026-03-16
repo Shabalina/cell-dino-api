@@ -3,7 +3,29 @@ import requests
 from PIL import Image
 import io
 import os
+import boto3
+from pathlib import PurePosixPath
 
+# S3 Client
+s3 = boto3.client(
+    "s3",
+    aws_access_key_id=st.secrets["AWS_ACCESS_KEY_ID"],
+    aws_secret_access_key=st.secrets["AWS_SECRET_ACCESS_KEY"],
+    region_name=st.secrets["AWS_REGION"]
+)
+
+BUCKET = st.secrets["BUCKET_NAME"]
+PREFIX = "converted_recurtion_data/test_dino_sample"
+
+def get_s3_images():
+    response = s3.list_objects_v2(Bucket=BUCKET, Prefix=PREFIX)
+    return [obj['Key'] for obj in response.get('Contents', []) if obj['Key'].lower().endswith(('.png', '.jpg', '.jpeg'))]
+
+if 'page_number' not in st.session_state:
+    st.session_state['page_number'] = 0
+
+ITEMS_PER_PAGE = 10
+selected_image_bytes = None
 
 # --- PAGE CONFIG ---
 st.set_page_config(page_title="Cell DINOv2 Classifier", page_icon="🔬", layout="centered")
@@ -23,50 +45,59 @@ DINOv2-based inference engine.
 # Container stays empty until a prediction is made.
 results_container = st.container()
 
+# --- 2. s3 GALLERY LOGIC---
+st.subheader("S3 Test Sample Gallery")
+image_keys = get_s3_images()
+
+if image_keys:
+    # Calculate total pages
+    n_images = len(image_keys)
+    n_pages = (n_images // ITEMS_PER_PAGE) + (1 if n_images % ITEMS_PER_PAGE > 0 else 0)
+
+    # Slice the list for the current page
+    start_idx = st.session_state['page_number'] * ITEMS_PER_PAGE
+    end_idx = start_idx + ITEMS_PER_PAGE
+    current_batch = image_keys[start_idx:end_idx]
+
+    # --- RENDER GALLERY ---
+    cols = st.columns(5)
+    for idx, key in enumerate(current_batch):
+        # Generate a temporary URL that lasts for 1 hour
+        url = s3.generate_presigned_url('get_object',
+                                        Params={'Bucket': BUCKET, 'Key': key},
+                                        ExpiresIn=3600)
+        
+        with cols[idx % 5]:
+            st.image(url, use_container_width=True)
+            s3_filename = PurePosixPath(key).name
+            # if st.button("Predict", key=key):
+            if st.button(f"Analyze {s3_filename}", key=f"btn_{s3_filename}", use_container_width=True):
+                # Get the raw bytes from S3
+                image_obj = s3.get_object(Bucket=BUCKET, Key=key)
+                selected_image_bytes = image_obj['Body'].read()
+
+                # Convert bytes to a PIL Image object and store image in session state
+                st.session_state['preview_img'] = Image.open(io.BytesIO(selected_image_bytes))
+                # st.rerun() # Ensure the top results block updates immediately
+
+
+    # --- PAGINATION CONTROLS ---
+    st.write(f"Showing page {st.session_state['page_number'] + 1} of {n_pages}")
+    col_prev, col_spacer, col_next = st.columns([1, 4, 1])
+
+    with col_prev:
+        if st.button("⬅️ Previous") and st.session_state['page_number'] > 0:
+            st.session_state['page_number'] -= 1
+            st.rerun()
+
+    with col_next:
+        if st.button("Next ➡️") and st.session_state['page_number'] < n_pages - 1:
+            st.session_state['page_number'] += 1
+            st.rerun()
+
 # --- 2 GALLERY LOGIC ---
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 DEMO_FOLDER = os.path.join(SCRIPT_DIR, "demo_images")
-
-
-selected_image_bytes = None
-
-if os.path.exists(DEMO_FOLDER):
-    files = [f for f in os.listdir(DEMO_FOLDER) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
-    
-    if not files:
-        st.warning(f"No images found in: {DEMO_FOLDER}")
-    else:
-        st.subheader("Select a Demo Image")
-
-
-    # Create a grid of columns
-    cols = st.columns(6)
-
-    for idx, file_name in enumerate(files):
-        img_path = os.path.join(DEMO_FOLDER, file_name)
-        img = Image.open(img_path)
-        
-        with cols[idx % 6]:
-            st.image(img, use_container_width=True)
-            # When button is clicked, we store the bytes in a variable
-            if st.button(f"Analyze {file_name}", key=f"btn_{file_name}", use_container_width=True):
-                with open(img_path, "rb") as f:
-                    selected_image_bytes = f.read()
-                # Store original image for display later
-                st.session_state['preview_img'] = img
-
-else:
-    st.error(f"Folder not found: {DEMO_FOLDER}")
-
-
-st.divider()
-
-# --- UPLOADER LOGIC (Alternative) ---
-uploaded_file = st.file_uploader("...or upload your own image", type=["jpg", "jpeg", "png"])
-
-if uploaded_file is not None:
-    selected_image_bytes = uploaded_file.getvalue()
-    st.session_state['preview_img'] = Image.open(uploaded_file)
 
 
 # --- PREDICTION LOGIC (Rendering to the TOP) ---
