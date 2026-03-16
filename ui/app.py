@@ -110,7 +110,7 @@ if selected_image_bytes is not None:
                 st.image(st.session_state['preview_img'], caption="Selected for Analysis", use_container_width=True)
 
         with col_res:
-            with st.spinner("Talking to SageMaker..."):
+            with st.spinner("🔬 Talking to SageMaker... (First analysis may take few seconds while the model warms up)"):
                 try:
                     # Send the binary data
                     headers = {"Content-Type": "image/jpeg"}
