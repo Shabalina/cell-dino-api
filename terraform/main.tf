@@ -1,8 +1,9 @@
 terraform {
   backend "s3" {
-    bucket = "terraform-state-bucket-sha"
-    key    = "sagemaker/terraform.tfstate"
-    region = "us-east-1"
+    bucket         = "terraform-state-bucket-sha"
+    key            = "sagemaker/terraform.tfstate"
+    region         = "us-east-1"
+    dynamodb_table = "terraform-lock"
   }
 }
 
@@ -22,6 +23,8 @@ resource "aws_sagemaker_model" "cell_dino_model" {
   primary_container {
     image = "${var.ecr_url}:${var.image_tag}"
   }
+
+  tags = local.common_tags
 }
 
 # 2. Endpoint Configuration (Serverless settings)
@@ -41,14 +44,18 @@ resource "aws_sagemaker_endpoint_configuration" "cell_dino_config" {
   lifecycle {
     create_before_destroy = true
   }
+
+  tags = local.common_tags
 }
 
 # 3. The Endpoint (The permanent address)
 resource "aws_sagemaker_endpoint" "cell_dino_endpoint" {
-  name                 = "cell-dino-serverless-endpoint"
+  name                 = local.sagemaker_endpoint_name
   endpoint_config_name = aws_sagemaker_endpoint_configuration.cell_dino_config.name
 
   lifecycle {
     ignore_changes = [tags]
   }
+
+  tags = local.common_tags
 }
