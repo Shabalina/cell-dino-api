@@ -2,7 +2,7 @@ name: Deploy to Amazon ECR
 
 on:
   push:
-    branches: [ "main" ] # Triggers only when you push to main
+    branches: [ "main", "qa", "feature/*" ]
 
 jobs:
   deploy:
@@ -19,16 +19,22 @@ jobs:
     - name: Pull LFS files
       run: git lfs pull
 
-    # - name: Set up Streamlit Secrets
-    #   run: |
-    #     mkdir -p mkdir -p ui/.streamlit
-    #     echo 'API_URL = "${{ secrets.API_URL }}"' > ui/.streamlit/secrets.toml
+    # Determine environment based on branch
+    - name: Set Env
+      run: |
+        if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "ENV=prod" >> $GITHUB_ENV
+        else
+            echo "ENV=qa" >> $GITHUB_ENV
+        fi
 
     # Check if model-related files changed
     - name: Check for Model Changes
       id: model-changes
       uses: tj-actions/changed-files@v41
       with:
+        # Compare current changes against the base branch (main or qa)
+        base_sha: ${{ github.event.before }}
         files: |
          src/**
          weights/**
@@ -50,14 +56,13 @@ jobs:
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+        IMAGE_TAG: ${{ env.ENV }}
       run: |
-        # Use buildx to ensure linux/amd64 compatibility and remove OCI bloat
         docker buildx build \
           --platform linux/amd64 \
           --provenance=false \
-          --output type=docker \
-          ---push \
-          -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
+          --push \
+          -t $ECR_REGISTRY/$ECR_REPOSITORY:${{ env.ENV }} .
 
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v3
@@ -67,22 +72,23 @@ jobs:
       working-directory: ./terraform
       run: |
         terraform init
-        terraform plan \
+        terraform workspace select ${{ env.ENV }} || terraform workspace new ${{ env.ENV }}
+        terraform plan -var="env=${{ env.ENV }}" \
           -var="region=${{ secrets.AWS_REGION }}" \
-         -var="image_tag=latest" \
+         -var="image_tag=${{ env.ENV }}" \
          -var="commit_sha=${{ github.sha }}" \
           -var="ecr_url=${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}" \
           -var="sagemaker_role_arn=${{ secrets.SAGEMAKER_ROLE_ARN }}"
       continue-on-error: false
 
     - name: Terraform Apply
-      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      if: (env.ENV == 'prod' || env.ENV == 'qa') && github.event_name == 'push'
       working-directory: ./terraform
       run: |
         terraform init
-        terraform apply -auto-approve \
+        terraform apply -var="env=${{ env.ENV }}" -auto-approve \
           -var="region=${{ secrets.AWS_REGION }}" \
-          -var="image_tag=latest" \
+          -var="image_tag=${{ env.ENV }}" \
           -var="commit_sha=${{ github.sha }}" \
           -var="ecr_url=${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}" \
           -var="sagemaker_role_arn=${{ secrets.SAGEMAKER_ROLE_ARN }}"

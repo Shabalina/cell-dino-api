@@ -1,7 +1,9 @@
 # 1. The REST API
 resource "aws_api_gateway_rest_api" "cell_dino_api" {
-  name               = "cell-dino-public-api"
+  name               = local.api_gateway_name
   binary_media_types = ["*/*"]
+
+  tags = local.common_tags
 }
 
 # 2. The Resource (the path /predict)
@@ -68,7 +70,7 @@ resource "aws_api_gateway_integration" "sagemaker_link" {
   credentials = aws_iam_role.apigw_sagemaker_role.arn
 
   request_parameters = {
-    "integration.request.header.Content-Type"      = "method.request.header.Content-Type"
+    "integration.request.header.Content-Type" = "method.request.header.Content-Type"
   }
 }
 
