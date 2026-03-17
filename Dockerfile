@@ -31,3 +31,5 @@ EXPOSE 8080
 # 8. Set the Entrypoint to the 'serve' command we just created
 # This allows SageMaker to start the container successfully.
 ENTRYPOINT ["serve"]
+
+# Force rebuild for QA.
