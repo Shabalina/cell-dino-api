@@ -28,16 +28,13 @@ Following the research phase, a cloud-native inference stack was engineered arou
 - **CI/CD:** GitHub Actions (Automated Docker builds to ECR & Terraform Apply).
 
 
+**Deployment Lifecycle Flow diagram:**
+
+![Deployment Flow](docs/images/DINO_Lifecycle_Flow.drawio.png)
 
 **User Experience & Data Flow diagram:**
 
 ![Data Flow](docs/images/architecture_diagram.png)
-
-
-
-**Deployment Lifecycle Flow diagram:**
-
-![Deployment Flow](docs/images/DINO_Lifecycle_Flow.drawio.png)
 
 
 ### Key Engineering Features
