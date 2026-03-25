@@ -6,14 +6,14 @@ A production-grade MLOps pipeline for classifying cellular images using DINO-bas
 ### 🔬 Project Motivation & Evolution
 **Context**: This project originated from the **Recursion Cellular Image Classification challenge**. Unlike standard contest practices, this project avoids over-fitting to specific plate/batch effects to reach the highest accuracy possible, focusing instead on robust, generalisable feature extraction for real-world inference.
 
-***Model Selection & Benchmarking:***
+**Model Selection & Benchmarking:**
 During the research phase, several architectures were evaluated for their efficacy in capturing the complex morphological features of cellular microscopy, including **DenseNet121**, classic **Vision Transformers (ViTs)**, and **DINO** (Self-Supervised ViT). Ultimately, the DINO-based model—pre-trained specifically on large-scale cellular datasets—was selected for its superior feature representation and biological signal extraction.
 
-***Inference & Deployment***
+**Inference & Deployment**
 Following the research phase, a cloud-native inference stack was engineered around the DINO model weights with the highest validation metrics:
-- 1. Feature Extraction: The DINO backbone processes images to generate high-dimensional embeddings.
-- 2. Serverless Hosting: Deployed via SageMaker Serverless Inference to provide an on-demand, scalable API while maintaining a $0$ cost footprint during idle periods.
-- 3. UI Integration: A Streamlit-based frontend that pulls from a managed S3 gallery, providing a seamless interface for researchers to run "Point-and-Click" classification.
+- Feature Extraction: The DINO backbone processes images to generate high-dimensional embeddings.
+- Serverless Hosting: Deployed via SageMaker Serverless Inference to provide an on-demand, scalable API while maintaining a $0$ cost footprint during idle periods.
+- UI Integration: A Streamlit-based frontend that pulls from a managed S3 gallery, providing a seamless interface for researchers to run "Point-and-Click" classification.
 
 ### System Architecture 
 
@@ -27,9 +27,17 @@ Following the research phase, a cloud-native inference stack was engineered arou
 
 - **CI/CD:** GitHub Actions (Automated Docker builds to ECR & Terraform Apply).
 
+
+
 **User Experience & Data Flow diagram:**
 
-![System Architecture](docs/images/architecture_diagram.png)
+![Data Flow](docs/images/architecture_diagram.png)
+
+
+
+**Deployment Lifecycle Flow diagram:**
+
+![Deployment Flow](docs/images/DINO_Lifecycle_Flow.drawio.png)
 
 
 ### Key Engineering Features
