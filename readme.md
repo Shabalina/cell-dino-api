@@ -1,7 +1,19 @@
 ## 🔬 Cell-DINO: End-to-End Cellular Image Classification
 Live Demo Page | Architecture Overview
 
-A production-grade MLOps platform for classifying cellular images using DINO-based features, deployed on AWS with a fully automated CI/CD pipeline.
+A production-grade MLOps pipeline for classifying cellular images using DINO-based features, deployed on AWS with a fully automated CI/CD pipeline.
+
+### 🔬 Project Motivation & Evolution
+**Context**: This project originated from the **Recursion Cellular Image Classification challenge**. Unlike standard contest practices, this project avoids over-fitting to specific plate/batch effects to reach the highest accuracy possible, focusing instead on robust, generalisable feature extraction for real-world inference.
+
+***Model Selection & Benchmarking:***
+During the research phase, several architectures were evaluated for their efficacy in capturing the complex morphological features of cellular microscopy, including **DenseNet121**, classic **Vision Transformers (ViTs)**, and **DINO** (Self-Supervised ViT). Ultimately, the DINO-based model—pre-trained specifically on large-scale cellular datasets—was selected for its superior feature representation and biological signal extraction.
+
+***Inference & Deployment***
+Following the research phase, a cloud-native inference stack was engineered around the DINO model weights with the highest validation metrics:
+- 1. Feature Extraction: The DINO backbone processes images to generate high-dimensional embeddings.
+- 2. Serverless Hosting: Deployed via SageMaker Serverless Inference to provide an on-demand, scalable API while maintaining a $0$ cost footprint during idle periods.
+- 3. UI Integration: A Streamlit-based frontend that pulls from a managed S3 gallery, providing a seamless interface for researchers to run "Point-and-Click" classification.
 
 ### System Architecture 
 
@@ -15,7 +27,7 @@ A production-grade MLOps platform for classifying cellular images using DINO-bas
 
 - **CI/CD:** GitHub Actions (Automated Docker builds to ECR & Terraform Apply).
 
-**Architecture diagram:**
+**User Experience & Data Flow diagram:**
 
 ![System Architecture](docs/images/architecture_diagram.png)
 
@@ -28,7 +40,7 @@ A production-grade MLOps platform for classifying cellular images using DINO-bas
 
 - **Cloud-Native Security:** Secured AWS credentials using GitHub Secrets and scoped IAM policies (Least Privilege).
 
-- **Automated Containerization:** Built custom Docker images optimized for SageMaker inference, managed via Amazon ECR.
+- **Automated Containerisation:** Built custom Docker images optimised for SageMaker inference, managed via Amazon ECR.
 
 
 ### Project Structure
