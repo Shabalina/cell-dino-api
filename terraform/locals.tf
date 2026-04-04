@@ -1,6 +1,4 @@
 locals {
-  # Common prefix to keep things tidy
-  #   prefix = "cell-dino"
 
   sagemaker_endpoint_name = "cell-dino-serverless-endpoint-${var.env}"
 
@@ -11,6 +9,7 @@ locals {
 
   aws_cloudwatch_log_group_name = "/aws/api-gateway/cell-dino-api-${var.env}"
   aws_iam_role_cloudwatch_name  = "api-gw-cloudwatch-global-${var.env}"
+  streamlit_url                 = "https://shabalina-cell-dino-api-uiapp-uqmv5v.streamlit.app/"
 
 
 
