@@ -58,7 +58,7 @@ resource "aws_iam_role_policy_attachment" "lambda_logs" {
 resource "aws_cloudwatch_event_target" "trigger_heartbeat_lambda" {
   count = terraform.workspace == "prod" ? 1 : 0
 
-  rule      = aws_cloudwatch_event_rule.streamlit_heartbeat_schedule.name
+  rule      = aws_cloudwatch_event_rule.streamlit_heartbeat_schedule[0].name
   target_id = "SendToLambda"
   arn       = aws_lambda_function.heartbeat_lambda[0].arn
 }
