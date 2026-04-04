@@ -60,7 +60,7 @@ resource "aws_cloudwatch_event_target" "trigger_heartbeat_lambda" {
 
   rule      = aws_cloudwatch_event_rule.streamlit_heartbeat_schedule.name
   target_id = "SendToLambda"
-  arn       = aws_lambda_function.heartbeat_lambda.arn
+  arn       = aws_lambda_function.heartbeat_lambda[0].arn
 }
 
 # CloudWatch Event Rule (The Cron Schedule)
