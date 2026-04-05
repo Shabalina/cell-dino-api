@@ -9,10 +9,10 @@ data "archive_file" "lambda_zip" {
 # Lambda Function
 resource "aws_lambda_function" "heartbeat_lambda" {
   count = terraform.workspace == "prod" ? 1 : 0
-
+  
   timeout = 30
   memory_size = 256
-
+  
   filename         = data.archive_file.lambda_zip[0].output_path
   source_code_hash = data.archive_file.lambda_zip[0].output_base64sha256 # Trigger redeploy on code change
 
