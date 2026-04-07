@@ -6,6 +6,17 @@ data "archive_file" "lambda_zip" {
   output_path = "${path.module}/heartbeat_payload.zip"
 }
 
+# Lambda Layer
+resource "aws_lambda_layer_version" "deps_layer" {
+  count               = terraform.workspace == "prod" ? 1 : 0
+  filename            = "${path.module}/deps_layer.zip"
+  layer_name          = "dependencies_layer"
+  compatible_runtimes = ["python3.11"]
+  
+  # This ensures the layer redeploys if the zip changes
+  source_code_hash    = filebase64sha256("${path.module}/deps_layer.zip")
+}
+
 # Lambda Function
 resource "aws_lambda_function" "heartbeat_lambda" {
   count = terraform.workspace == "prod" ? 1 : 0
@@ -20,6 +31,8 @@ resource "aws_lambda_function" "heartbeat_lambda" {
   role          = aws_iam_role.lambda_exec_role[0].arn
   handler       = "heartbeat.lambda_handler"
   runtime       = "python3.11"
+
+  layers = [aws_lambda_layer_version.deps_layer[0].arn]
 
   depends_on = [data.archive_file.lambda_zip]
 
