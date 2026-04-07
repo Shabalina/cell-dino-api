@@ -64,6 +64,12 @@ jobs:
           --push \
           -t $ECR_REGISTRY/$ECR_REPOSITORY:${{ env.ENV }} .
 
+    - name: Prepare Lambda Layer
+      run: |
+        mkdir -p lambda_layers/python
+        pip install -r src/monitoring/requirements.txt -t lambda_layers/python/
+        cd lambda_layers && zip -r ../terraform/deps_layer.zip .
+
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v3
 
