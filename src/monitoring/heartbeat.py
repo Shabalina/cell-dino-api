@@ -13,6 +13,7 @@ def lambda_handler(event, context):
         req = urllib.request.Request(url, headers=headers)
         # Poking the app to reset the 24h sleep timer
         with urllib.request.urlopen(req, timeout=25) as response:
+
             status = response.getcode()
             print(f"Heartbeat successful: {url} returned {status}")
             return {"status": "online", "code": status}
