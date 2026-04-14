@@ -20,10 +20,7 @@ resource "aws_lambda_layer_version" "deps_layer" {
 # Lambda Function
 resource "aws_lambda_function" "heartbeat_lambda" {
   count = terraform.workspace == "prod" ? 1 : 0
-  
-  timeout = 30
-  memory_size = 256
-  
+
   filename         = data.archive_file.lambda_zip[0].output_path
   source_code_hash = data.archive_file.lambda_zip[0].output_base64sha256 # Trigger redeploy on code change
 
@@ -31,8 +28,18 @@ resource "aws_lambda_function" "heartbeat_lambda" {
   role          = aws_iam_role.lambda_exec_role[0].arn
   handler       = "heartbeat.lambda_handler"
   runtime       = "python3.11"
+  
+  # Ensure this matches the layer (standard Intel/AMD)
+  architectures = ["x86_64"] 
 
-  layers = [aws_lambda_layer_version.deps_layer[0].arn]
+  # Increase these! Selenium is memory-hungry
+  memory_size = 1024 
+  timeout     = 60
+
+  layers = [
+    "arn:aws:lambda:us-east-1:764866452798:layer:chrome-aws-lambda:111",
+    aws_lambda_layer_version.deps_layer[0].arn
+  ]
 
   depends_on = [data.archive_file.lambda_zip]
 
