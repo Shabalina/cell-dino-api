@@ -93,6 +93,12 @@ jobs:
           --only-binary=:all: \
           -r src/monitoring/requirements.txt
 
+        DRIVER_URL=$(curl -s https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json | jq -r '.channels.Stable.downloads.chromedriver[] | select(.platform=="linux64") | .url')
+        curl -sL -o chromedriver_linux.zip "$DRIVER_URL"
+        
+        unzip -j chromedriver_linux.zip "chromedriver-linux64/chromedriver" -d lambda_layers/python/bin/
+        chmod +x lambda_layers/python/bin/chromedriver
+
         cd lambda_layers
         zip -r ../terraform/deps_layer.zip python
 

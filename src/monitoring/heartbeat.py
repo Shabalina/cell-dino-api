@@ -1,47 +1,61 @@
 import os
 import time
 import brotli
+import shutil
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 
 def lambda_handler(event, context):
-    # Paths
+    
+    # 1. Paths for the Browser (from the public Layer)
     br_path = '/opt/nodejs/node_modules/@sparticuz/chromium/bin/chromium.br'
-    output_path = '/tmp/chromium'
-    # 1. Decompress the binary if it's not already in /tmp
-    if not os.path.exists(output_path):
-        print("Decompressing Chromium binary to /tmp...")
-        with open(br_path, 'rb') as f:
-            compressed_data = f.read()
-        
-        decompressed_data = brotli.decompress(compressed_data)
-        
-        with open(output_path, 'wb') as f:
-            f.write(decompressed_data)
-        
-        # Give it execute permissions
-        os.chmod(output_path, 0o755)
-        print("Decompression complete.")
-
-    # 2. Setup Selenium
-    options = Options()
-    options.binary_location = output_path  # point to the NEW file in /tmp
+    browser_out = '/tmp/chromium'
     
-    options.add_argument("--headless=new")
-    options.add_argument("--no-sandbox")
-    options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("--disable-gpu")
-    options.add_argument("--single-process")
+    # 2. Paths for the Driver (from your own Zip Layer)
+    driver_layer_path = '/opt/python/bin/chromedriver'
+    driver_out = '/tmp/chromedriver'
 
-    # Path to the driver provided by the layer
-    service = Service("/opt/bin/chromedriver")
-    
     try:
+        # --- Decompress Browser ---
+        if not os.path.exists(browser_out):
+            print("🔍 Decompressing Chromium binary...")
+            with open(br_path, 'rb') as f:
+                with open(browser_out, 'wb') as out:
+                    out.write(brotli.decompress(f.read()))
+            os.chmod(browser_out, 0o755)
+            print("Browser ready.")
+
+        # --- Prepare Driver ---
+        if not os.path.exists(driver_out):
+            print("🔍 Copying Chromedriver to /tmp...")
+            # copy to /tmp to ensure it's executable
+            shutil.copy2(driver_layer_path, driver_out)
+            os.chmod(driver_out, 0o755)
+            print("Driver ready.")
+
+        # --- Initialize Selenium ---
+        options = Options()
+        options.binary_location = browser_out
+
+        options.add_argument("--headless=new")
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
+        options.add_argument("--disable-gpu")
+        options.add_argument("--single-process")
+
+        # Map temp folders to /tmp
+        options.add_argument("--homedir=/tmp")
+        options.add_argument("--data-path=/tmp/data-path")
+        options.add_argument("--disk-cache-dir=/tmp/disk-cache-dir")
+
+        #  print("Starting WebDriver...")
+        service = Service(executable_path=driver_out)
         driver = webdriver.Chrome(service=service, options=options)
+
         url = os.environ['STREAMLIT_URL']
-        print(f"🔍 Analysing application state for: {url}")
+        print(f"Analysing application state for: {url}")
         driver.get(url)
         
         # 1. Wait for Title Change (Checking if already awake)
