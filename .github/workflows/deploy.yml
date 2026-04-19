@@ -82,9 +82,24 @@ jobs:
 
     - name: Prepare Lambda Layer
       run: |
+        rm -rf lambda_layers
         mkdir -p lambda_layers/python
-        pip install -r src/monitoring/requirements.txt -t lambda_layers/python/
-        cd lambda_layers && zip -r ../terraform/deps_layer.zip .
+        
+        pip install \
+          --platform manylinux2014_x86_64 \
+          --target lambda_layers/python/ \
+          --implementation cp \
+          --python-version 3.11 \
+          --only-binary=:all: \
+          -r src/monitoring/requirements.txt
+
+        cd lambda_layers
+        zip -r ../terraform/deps_layer.zip python
+
+    - name: Build Lambda Layer
+      run: |
+          chmod +x build_layer.sh
+          ./build_layer.sh # This creates the zip on the runner
 
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v3

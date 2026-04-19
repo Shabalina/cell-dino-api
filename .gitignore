@@ -35,3 +35,6 @@ crash.log
 
 # Streamlit secrets
 */.streamlit/*
+
+python/
+deps_layer.zip
