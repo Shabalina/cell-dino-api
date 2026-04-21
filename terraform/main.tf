@@ -5,6 +5,22 @@ terraform {
     region         = "us-east-1"
     dynamodb_table = "terraform-lock"
   }
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0" # Standardises to the latest version 5
+    }
+    # KEEP THIS TEMPORARILY to fix the error
+    archive = {
+      source  = "hashicorp/archive"
+      version = "~> 2.0"
+    }
+  }
+}
+
+provider "aws" {
+  region = "us-east-1"
+}
 }
 
 resource "random_id" "model_suffix" {
