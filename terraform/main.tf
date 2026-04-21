@@ -11,10 +11,10 @@ terraform {
       version = "~> 6.0" # Standardises to the latest version 5
     }
     # KEEP THIS TEMPORARILY to fix the error
-    archive = {
-      source  = "hashicorp/archive"
-      version = "~> 2.0"
-    }
+    # archive = {
+    #   source  = "hashicorp/archive"
+    #   version = "~> 2.0"
+    # }
   }
 }
 
