@@ -21,7 +21,7 @@ terraform {
 provider "aws" {
   region = "us-east-1"
 }
-}
+
 
 resource "random_id" "model_suffix" {
   byte_length = 4
