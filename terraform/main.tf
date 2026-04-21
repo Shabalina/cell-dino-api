@@ -8,7 +8,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 5.0" # Standardises to the latest version 5
+      version = "~> 6.0" # Standardises to the latest version 5
     }
     # KEEP THIS TEMPORARILY to fix the error
     archive = {
