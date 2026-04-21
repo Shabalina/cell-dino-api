@@ -12,7 +12,7 @@ def run_smoke_test():
     # 1. Configuration
     GOLD_DATA_DIR = "tests/gold_set/"
     MODEL_WEIGHTS = "models/cell_dino_latest.pth"
-    ACCURACY_THRESHOLD = 0.80  # We expect 80% accuracy on this simple set
+    ACCURACY_THRESHOLD = 0.80  # We expect 80% accuracy on this simple set, really is 0.53 max
     
     # 2. Setup Model
     device = torch.device("cpu") # Use CPU for CI/CD runners
