@@ -1,36 +1,30 @@
 import torch
 import os
 import sys
-from PIL import Image
-from torchvision import transforms
+import cv2
+import numpy as np
+
 # Replace with your actual model class/loading logic
 from src.model_definition import CellDinoClassifier 
 
 def run_smoke_test():
     print("--- Starting Model Smoke Test ---")
     
-    # 1. Configuration
+    # Configuration
     # Get the directory where main.py is located (/app/src)
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     GOLD_DATA_DIR = "tests/gold_set/"
     MODEL_WEIGHTS = os.path.join(BASE_DIR, "..", "weights/dino_best_model_last.pth")
     ACCURACY_THRESHOLD = 0.80  # We expect 80% accuracy on this simple set, really is 0.53 max
     
-    # 2. Setup Model
+    # Setup Model
     device = torch.device("cpu") # Use CPU for CI/CD runners
     model = CellDinoClassifier(num_classes=1108)
     model.load_state_dict(torch.load(MODEL_WEIGHTS, map_location=device))
     model.to(device)
     model.eval()
 
-    # 3. Simple Preprocessing
-    preprocess = transforms.Compose([
-        transforms.Resize(224),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-    ])
-
-    # 4. Evaluation Loop
+    # Evaluation Loop
     correct = 0
     total = 0
     
@@ -40,13 +34,27 @@ def run_smoke_test():
         if not os.path.isdir(label_dir): continue
             
         for img_name in os.listdir(label_dir):
+            # Image preprocessing
             img_path = os.path.join(label_dir, img_name)
-            img = Image.open(img_path).convert('RGB')
-            input_tensor = preprocess(img).unsqueeze(0)
+            # 1. Read with OpenCV
+            img = cv2.imread(img_path)
+            if img is None:
+                print(f"Could not read {img_path}")
+                continue
+            # 2. Resize
+            img = cv2.resize(img, (224, 224))
+            # 3. Convert to float and scale 0-1
+            img = img.astype(np.float32) / 255.0
+            # 4. Transpose from HWC (224,224,3) to CHW (3,224,224)
+            img = np.transpose(img, (2, 0, 1))
+            # 5. Convert to Tensor and add Batch dimension
+            input_tensor = torch.from_numpy(img).unsqueeze(0).to(device)
 
             with torch.no_grad():
-                output = model(input_tensor)
-                prediction = torch.argmax(output, dim=1).item()
+                logits = model(input_tensor)
+                # Matching FastAPI logic: Softmax then Argmax
+                probabilities = torch.nn.functional.softmax(logits, dim=1)
+                prediction = torch.argmax(probabilities, dim=1).item()
                 
             # Logic to map 'prediction' index back to 'label' string
             if check_prediction(prediction, label):

@@ -50,7 +50,7 @@ jobs:
     - name: Install Test Dependencies
     #   if: steps.model-changes.outputs.any_changed == 'true'
       run: |
-        pip install torch torchvision pillow 
+        pip install torch torchvision pillow numpy opencv-python-headless
 
     - name: Run Model Smoke Test
     #   if: steps.model-changes.outputs.any_changed == 'true'
