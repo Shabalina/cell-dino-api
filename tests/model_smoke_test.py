@@ -4,7 +4,7 @@ import sys
 from PIL import Image
 from torchvision import transforms
 # Replace with your actual model class/loading logic
-from src.model_definition import CellDINOClassifier 
+from src.model_definition import CellDinoClassifier 
 
 def run_smoke_test():
     print("--- Starting Model Smoke Test ---")
