@@ -10,8 +10,10 @@ def run_smoke_test():
     print("--- Starting Model Smoke Test ---")
     
     # 1. Configuration
+    # Get the directory where main.py is located (/app/src)
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     GOLD_DATA_DIR = "tests/gold_set/"
-    MODEL_WEIGHTS = "models/cell_dino_latest.pth"
+    MODEL_WEIGHTS = os.path.join(BASE_DIR, "..", "weights/dino_best_model_last.pth")
     ACCURACY_THRESHOLD = 0.80  # We expect 80% accuracy on this simple set, really is 0.53 max
     
     # 2. Setup Model
