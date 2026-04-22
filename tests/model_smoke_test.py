@@ -18,8 +18,9 @@ def run_smoke_test():
     
     # 2. Setup Model
     device = torch.device("cpu") # Use CPU for CI/CD runners
-    model = CellDinoClassifier()
-    model.load_state_dict(torch.load(MODEL_WEIGHTS, map_local_strategy=device))
+    model = CellDinoClassifier(num_classes=1108)
+    model.load_state_dict(torch.load(MODEL_WEIGHTS, map_location=device))
+    model.to(device)
     model.eval()
 
     # 3. Simple Preprocessing
