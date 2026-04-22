@@ -56,7 +56,7 @@ jobs:
     #   if: steps.model-changes.outputs.any_changed == 'true'
     #   env:
     #    PYTHONPATH: ${{ github.workspace }}
-      run: python tests/model_smoke_test.py
+      run: python -m tests.model_smoke_test
 
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v4
