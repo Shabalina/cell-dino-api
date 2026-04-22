@@ -57,6 +57,7 @@ def run_smoke_test():
                 prediction = torch.argmax(probabilities, dim=1).item()
                 
             # Logic to map 'prediction' index back to 'label' string
+            print (f"Predicted: {prediction}, True Label: {label}")
             if check_prediction(prediction, label):
                 correct += 1
             total += 1
