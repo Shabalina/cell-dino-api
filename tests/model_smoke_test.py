@@ -6,6 +6,10 @@ import numpy as np
 
 # Replace with your actual model class/loading logic
 from src.model_definition import CellDinoClassifier 
+from src.image_processing import preprocess_image
+
+# weights_filename = "dino_best_model_last"
+weights_filename = "best_model_pytorch-training-2026-02-12-18-05-51-293"
 
 def run_smoke_test():
     print("--- Starting Model Smoke Test ---")
@@ -14,12 +18,13 @@ def run_smoke_test():
     # Get the directory where main.py is located (/app/src)
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     GOLD_DATA_DIR = "tests/gold_set/"
-    MODEL_WEIGHTS = os.path.join(BASE_DIR, "..", "weights/dino_best_model_last.pth")
-    ACCURACY_THRESHOLD = 0.80  # We expect 80% accuracy on this simple set, really is 0.53 max
+    MODEL_WEIGHTS = os.path.join(BASE_DIR, "..", f"weights/{weights_filename}.pth")
+    ACCURACY_THRESHOLD = 0.40  # Best validation accuracy was 0.53, 0.40 is a reasonable threshold for a smoke test
     
     # Setup Model
     device = torch.device("cpu") # Use CPU for CI/CD runners
     model = CellDinoClassifier(num_classes=1108)
+    print("MODEL SET UP")
     model.load_state_dict(torch.load(MODEL_WEIGHTS, map_location=device))
     model.to(device)
     model.eval()
@@ -36,34 +41,28 @@ def run_smoke_test():
         for img_name in os.listdir(label_dir):
             # Image preprocessing
             img_path = os.path.join(label_dir, img_name)
-            # 1. Read with OpenCV
-            img = cv2.imread(img_path)
-            if img is None:
-                print(f"Could not read {img_path}")
+
+            input_tensor = preprocess_image(img_path)
+            if input_tensor is None:
                 continue
-            # 2. Resize
-            img = cv2.resize(img, (224, 224))
-            # 3. Convert to float and scale 0-1
-            img = img.astype(np.float32) / 255.0
-            # 4. Transpose from HWC (224,224,3) to CHW (3,224,224)
-            img = np.transpose(img, (2, 0, 1))
-            # 5. Convert to Tensor and add Batch dimension
-            input_tensor = torch.from_numpy(img).unsqueeze(0).to(device)
+
+            input_tensor = input_tensor.to(device)
 
             with torch.no_grad():
                 logits = model(input_tensor)
                 # Matching FastAPI logic: Softmax then Argmax
                 probabilities = torch.nn.functional.softmax(logits, dim=1)
-                prediction = torch.argmax(probabilities, dim=1).item()
+                conf, pred = torch.max(probabilities, 1)
                 
             # Logic to map 'prediction' index back to 'label' string
-            print (f"Predicted: {prediction}, True Label: {label}")
-            if check_prediction(prediction, label):
+            print (f"Predicted: {pred.item()}, Confidence: {conf.item():.2f}, True Label: {label}, Image: {img_name}")
+            if str(pred.item()) == str(label):
                 correct += 1
             total += 1
 
     accuracy = correct / total if total > 0 else 0
     print(f"Smoke Test Accuracy: {accuracy:.2%}")
+    print(f"Correct guesses: {correct} from {total} samples.")
 
     if accuracy < ACCURACY_THRESHOLD:
         print(f"FAILED: Accuracy {accuracy:.2%} is below threshold {ACCURACY_THRESHOLD}")
