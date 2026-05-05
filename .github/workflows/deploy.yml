@@ -40,21 +40,23 @@ jobs:
          weights/**
          Dockerfile
 
-    # - name: Set up Python for Testing
+    - name: Set up Python for Testing
     #   if: steps.model-changes.outputs.any_changed == 'true'
-    #   uses: actions/setup-python@v5
-    #   with:
-    #     python-version: '3.11'
-    #     cache: 'pip'
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: 'pip'
 
-    # - name: Install Test Dependencies
+    - name: Install Test Dependencies
     #   if: steps.model-changes.outputs.any_changed == 'true'
-    #   run: |
-    #     pip install torch torchvision pillow 
+      run: |
+        pip install torch torchvision pillow numpy opencv-python-headless
 
-    # - name: Run Model Smoke Test
+    - name: Run Model Smoke Test
     #   if: steps.model-changes.outputs.any_changed == 'true'
-    #   run: python tests/model_smoke_test.py
+    #   env:
+    #    PYTHONPATH: ${{ github.workspace }}
+      run: python -m tests.model_smoke_test
 
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v4

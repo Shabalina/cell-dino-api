@@ -4,6 +4,7 @@ import cv2
 import numpy as np
 import os
 from model_definition import CellDinoClassifier
+from src.image_processing import preprocess_image
 
 # Get the directory where main.py is located (/app/src)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -45,21 +46,29 @@ async def invocations(request: Request):
         return Response(content="No data received", status_code=status.HTTP_400_BAD_REQUEST)
     
     # 2. Preprocess (Use the bytes directly)
-    try:
-        nparr = np.frombuffer(contents, np.uint8)
-        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    # try:
+    #     nparr = np.frombuffer(contents, np.uint8)
+    #     img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
         
-        if img is None:
-            raise ValueError("Could not decode image")
+    #     if img is None:
+    #         raise ValueError("Could not decode image")
     
-        # Image preprocessing
-        img = cv2.resize(img, (224, 224))
-        img = img.astype(np.float32) / 255.0
-        img = np.transpose(img, (2, 0, 1))
-        input_tensor = torch.from_numpy(img).unsqueeze(0).to(device)
+    #     # Image preprocessing
+    #     img = cv2.resize(img, (224, 224))
+    #     img = img.astype(np.float32) / 255.0
+    #     img = np.transpose(img, (2, 0, 1))
+    #     input_tensor = torch.from_numpy(img).unsqueeze(0).to(device)
 
-    except Exception as e:
-        return Response(content=f"Preprocessing error: {str(e)}", status_code=status.HTTP_400_BAD_REQUEST)
+    # except Exception as e:
+    #     return Response(content=f"Preprocessing error: {str(e)}", status_code=status.HTTP_400_BAD_REQUEST)
+    
+    # Image preprocessing
+    input_tensor = preprocess_image(contents)
+    if input_tensor is None:
+        return Response(content="Preprocessing error: Could not decode image", status_code=400)
+
+    # Move to device (GPU/CPU)
+    input_tensor = input_tensor.to(device)
     
     # 3. Inference
     with torch.no_grad():
