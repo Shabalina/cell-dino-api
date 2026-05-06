@@ -4,7 +4,19 @@ from PIL import Image
 import io
 import os
 import boto3
+import json
 from pathlib import PurePosixPath
+
+# Load Manifest
+@st.cache_data # Cache to not reload every click
+def load_manifest():
+    manifest_path = os.path.join(os.path.dirname(__file__), "metadata.json")
+    if os.path.exists(manifest_path):
+        with open(manifest_path, "r") as f:
+            return json.load(f)
+    return {}
+
+manifest = load_manifest()
 
 # S3 Client
 s3 = boto3.client(
@@ -15,7 +27,7 @@ s3 = boto3.client(
 )
 
 BUCKET = st.secrets["BUCKET_NAME"]
-PREFIX = "converted_recurtion_data/test_dino_sample"
+PREFIX = "converted_recurtion_data/dino_demo_sample"
 
 def get_s3_images():
     response = s3.list_objects_v2(Bucket=BUCKET, Prefix=PREFIX)
@@ -27,12 +39,10 @@ if 'page_number' not in st.session_state:
 ITEMS_PER_PAGE = 10
 selected_image_bytes = None
 
-# --- PAGE CONFIG ---
+# Page config
 st.set_page_config(page_title="Cell DINOv2 Classifier", page_icon="🔬", layout="centered")
 
-# --- SETTINGS ---
-# In production, move this to st.secrets["API_URL"]
-# API_URL = "https://h3ct11p3ya.execute-api.us-east-1.amazonaws.com/prod/predict"
+# Settings
 API_URL = st.secrets["API_URL"]
 
 st.title("🔬 Cell siRNA Classifier")
@@ -41,11 +51,11 @@ Upload a cellular microscopy image to predict the **siRNA ID** using our
 DINOv2-based inference engine.
 """)
 
-# --- 1. THE TOP SLOT FOR RESULTS---
+# --- THE TOP SLOT FOR RESULTS---
 # Container stays empty until a prediction is made.
 results_container = st.container()
 
-# --- 2. s3 GALLERY LOGIC---
+# --- s3 GALLERY LOGIC---
 st.subheader("S3 Test Sample Gallery")
 image_keys = get_s3_images()
 
@@ -76,6 +86,8 @@ if image_keys:
                 image_obj = s3.get_object(Bucket=BUCKET, Key=key)
                 selected_image_bytes = image_obj['Body'].read()
 
+                current_filename = s3_filename # Store filename for manifest lookup
+
                 # Convert bytes to a PIL Image object and store image in session state
                 st.session_state['preview_img'] = Image.open(io.BytesIO(selected_image_bytes))
                 # st.rerun() # Ensure the top results block updates immediately
@@ -95,10 +107,6 @@ if image_keys:
             st.session_state['page_number'] += 1
             st.rerun()
 
-# --- 2 GALLERY LOGIC ---
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-DEMO_FOLDER = os.path.join(SCRIPT_DIR, "demo_images")
-
 
 # --- PREDICTION LOGIC (Rendering to the TOP) ---
 if selected_image_bytes is not None:
@@ -108,6 +116,13 @@ if selected_image_bytes is not None:
 
         with col_img:
                 st.image(st.session_state['preview_img'], caption="Selected for Analysis", use_container_width=True)
+                
+                # --- MANIFEST LOOKUP ---
+                if current_filename in manifest:
+                    file_info = manifest[current_filename]
+                    st.info(f"**Sample Source:** {file_info.get('type', 'N/A').replace('_', ' ').title()}")
+                    if file_info.get('note'):
+                        st.caption(f"📝 {file_info['note']}")
 
         with col_res:
             with st.spinner("🔬 Talking to SageMaker... (First analysis may take few seconds while the model warms up)"):
@@ -118,13 +133,27 @@ if selected_image_bytes is not None:
                     
                     if response.status_code == 200:
                         result = response.json()
-                        
-                        st.success("Analysis Complete!")
+
+                        # Extract result - adjust keys based on your FastAPI response
+                        predicted_id = str(result.get('prediction') or result.get('sirna_id'))
+                        confidence = result.get('confidence', 0)
+
+                        # --- GROUND TRUTH LOGIC ---
+                        ground_truth = manifest.get(current_filename, {}).get("label")
+                        if ground_truth:
+                            is_match = str(predicted_id) == str(ground_truth)
+                            if is_match:
+                                st.balloons()
+                                st.success("✅ VALIDATION PASSED: Prediction matches Ground Truth!")
+                            else:
+                                st.warning("❌ VALIDATION MISMATCH: Model guessed incorrectly.")
                         
                         # Layout for results
                         col1, col2 = st.columns(2)
                         with col1:
                             st.metric("Predicted siRNA ID", f"#{result.get('sirna_id')}")
+                            if ground_truth:
+                                st.markdown(f"**Actual ID:** `#{ground_truth}`")
                         with col2:
                             confidence = result.get('confidence', 0)
                             st.metric("Confidence Score", f"{confidence:.2%}")
