@@ -97,6 +97,7 @@ jobs:
         terraform plan -var="env=${{ env.ENV }}" \
           -var="region=${{ secrets.AWS_REGION }}" \
          -var="image_tag=${{ env.ENV }}" \
+         -var="ecr_repo_name=${{ secrets.ECR_REPOSITORY }}" \
          -var="commit_sha=${{ github.sha }}" \
           -var="ecr_url=${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}" \
           -var="sagemaker_role_arn=${{ secrets.SAGEMAKER_ROLE_ARN }}"
@@ -110,6 +111,7 @@ jobs:
         terraform apply -var="env=${{ env.ENV }}" -auto-approve \
           -var="region=${{ secrets.AWS_REGION }}" \
           -var="image_tag=${{ env.ENV }}" \
+          -var="ecr_repo_name=${{ secrets.ECR_REPOSITORY }}" \
           -var="commit_sha=${{ github.sha }}" \
           -var="ecr_url=${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}" \
           -var="sagemaker_role_arn=${{ secrets.SAGEMAKER_ROLE_ARN }}"

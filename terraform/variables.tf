@@ -16,6 +16,11 @@ variable "image_tag" {
   description = "latest"
 }
 
+variable "ecr_repo_name" {
+  type        = string
+  description = "name of the repository in ECR where the image is stored (e.g., cell-dino-repo)"
+}
+
 variable "ecr_url" {
   type        = string
   description = "The full URL of the ECR repository"
