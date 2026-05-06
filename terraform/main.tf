@@ -52,6 +52,9 @@ resource "aws_sagemaker_model" "cell_dino_model" {
     # image = "${var.ecr_url}:${var.image_tag}"
     image = "${var.ecr_url}@${data.aws_ecr_image.latest_image.id}" 
   }
+  lifecycle {
+    create_before_destroy = true
+  }
 
   tags = local.common_tags
 }
@@ -85,6 +88,8 @@ resource "aws_sagemaker_endpoint" "cell_dino_endpoint" {
   lifecycle {
     ignore_changes = [tags]
   }
+
+  depends_on = [aws_sagemaker_endpoint_configuration.cell_dino_config]
 
   tags = local.common_tags
 }
