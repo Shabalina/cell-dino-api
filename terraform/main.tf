@@ -23,11 +23,23 @@ provider "aws" {
 }
 
 
+# resource "random_id" "model_suffix" {
+#   byte_length = 4
+#   # This ensures the ID ONLY changes when the image tag changes
+#   keepers = {
+#     image_tag = var.image_tag
+#   }
+# }
+# This tells Terraform: "Go look at ECR right now"
+data "aws_ecr_image" "latest_image" {
+  repository_name = var.ecr_repo_name
+  image_tag       = var.image_tag # e.g., "qa"
+}
 resource "random_id" "model_suffix" {
   byte_length = 4
-  # This ensures the ID ONLY changes when the image tag changes
   keepers = {
-    image_tag = var.image_tag
+    # .id is the sha256 digest
+    image_digest = data.aws_ecr_image.latest_image.id
   }
 }
 
@@ -37,7 +49,8 @@ resource "aws_sagemaker_model" "cell_dino_model" {
   execution_role_arn = var.sagemaker_role_arn
 
   primary_container {
-    image = "${var.ecr_url}:${var.image_tag}"
+    # image = "${var.ecr_url}:${var.image_tag}"
+    image = "${var.ecr_url}@${data.aws_ecr_image.latest_image.id}" 
   }
 
   tags = local.common_tags
