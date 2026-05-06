@@ -33,7 +33,7 @@ def load_model():
 async def ping():
     # Return 200 OK if model is loaded
     if model is not None:
-        return Response(content="ok", status_code=status.HTTP_200_OK)
+        return {"version": "2.0.0-new-preprocessing", "status": "Healthy"}
     return Response(content="error", status_code=status.HTTP_503_SERVICE_UNAVAILABLE)
 
 # 2. THE INFERENCE POINT (Required by SageMaker)
