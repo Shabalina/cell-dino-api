@@ -86,6 +86,9 @@ resource "aws_sagemaker_endpoint" "cell_dino_endpoint" {
   endpoint_config_name = aws_sagemaker_endpoint_configuration.cell_dino_config.name
 
   lifecycle {
+    replace_triggered_by = [
+      aws_sagemaker_endpoint_configuration.cell_dino_config.name
+    ]
     ignore_changes = [tags]
   }
 
