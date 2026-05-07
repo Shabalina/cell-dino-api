@@ -82,10 +82,13 @@ resource "aws_sagemaker_endpoint_configuration" "cell_dino_config" {
 
 # 3. The Endpoint (The permanent address)
 resource "aws_sagemaker_endpoint" "cell_dino_endpoint" {
-  name                 = local.sagemaker_endpoint_name
+  name                 = "${local.sagemaker_endpoint_name}-${random_id.model_suffix.hex}"
   endpoint_config_name = aws_sagemaker_endpoint_configuration.cell_dino_config.name
 
   lifecycle {
+    # replace_triggered_by = [
+    #   aws_sagemaker_endpoint_configuration.cell_dino_config.name
+    # ]
     ignore_changes = [tags]
   }
 

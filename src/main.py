@@ -4,7 +4,7 @@ import cv2
 import numpy as np
 import os
 from model_definition import CellDinoClassifier
-from src.image_processing import preprocess_image
+from image_processing import preprocess_image
 
 # Get the directory where main.py is located (/app/src)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
