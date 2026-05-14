@@ -91,7 +91,7 @@ st.markdown("""
     }
     div[data-testid="stColumn"] button:not([aria-label="Fullscreen"]) {
         background-color: #9bc7c7 !important; 
-        color: white !important;
+        color: black !important;
         border: 2px solid #000000 !important; /* Bold black edge */
         border-radius: 4px !important;
         font-weight: 700 !important;
@@ -126,8 +126,8 @@ st.divider()
 results_container = st.container()
 
 st.markdown("""
-Select a file from the gallery below to run a prediction using the 
-**DINOv2-based inference engine**. The system will automatically identify the corresponding **siRNA ID**.
+Select a sample from the gallery and click the 🔎 Analyze button to run the DINOv2 inference engine. 
+The system will automatically identify the corresponding **siRNA ID**.
 """)
 
 # --- s3 GALLERY LOGIC---
